@@ -57,7 +57,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		// 计算上传后的文件的sha1值，并存入元数据中，注意要先把文件句柄位置移动到文件头部
 		newFile.Seek(0, 0)
 		fileMeta.FileSha1 = util.FileSha1(newFile)
-		meta.UpdateFileMeta(fileMeta)
+		// meta.UpdateFileMeta(fileMeta)
+		meta.UpdateFileMetaDB(fileMeta)
 
 		// 重定向到上传成功页面
 		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
@@ -73,7 +74,12 @@ func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
 func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	filehash := r.Form.Get("filehash")
-	fMeta := meta.GetFileMeta(filehash)
+	// fMeta := meta.GetFileMeta(filehash)
+	fMeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	data, err := json.Marshal(fMeta)
 	if err != nil { // json转换失败
 		w.WriteHeader(http.StatusInternalServerError)
