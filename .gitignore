@@ -33,4 +33,7 @@
 # Ignore all local history of files
 .history
 
+### log file ###
+*.log
+
 # End of https://www.gitignore.io/api/go,visualstudiocode
