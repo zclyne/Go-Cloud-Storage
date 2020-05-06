@@ -3,7 +3,6 @@ package handler
 import (
 	dblayer "cloud-storage/db"
 	"cloud-storage/util"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -46,12 +45,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type SigninResponseData struct {
-	Token    string
-	Username string
-	Location string
-}
-
 // SignInHandler: 用户登陆接口
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -73,27 +66,73 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("FAILED"))
 		return
 	}
-	// 3. 登陆成功后重定向到首页
-	responseData := SigninResponseData{
-		Token:    token,
-		Username: username,
-		Location: "http://" + r.Host + "/static/view/home.html",
-	}
 
+	// 3. 登陆成功后构造响应结构体，重定向到home页面
+	resp := util.RespMsg{
+		Code: 0,
+		Msg:  "OK",
+		Data: struct {
+			Location string
+			Username string
+			Token    string
+		}{
+			Location: "http://" + r.Host + "/static/view/home.html",
+			Username: username,
+			Token:    token,
+		},
+	}
 	// 使用json格式写回
-	data, err := json.Marshal(responseData)
-	if err != nil { // json转换失败
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Write(data)
-
+	w.Write(resp.JSONBytes())
 }
 
-// 根据用户名生成用户的token，token是40位的字符串
+// UserInfoHandler: 返回用户详细信息
+func UserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. 解析请求参数
+	r.ParseForm()
+	username := r.Form.Get("username")
+	// token := r.Form.Get("token")
+
+	// // 2. 验证token是否有效
+	// isValidToken := IsTokenValid(token)
+	// if !isValidToken {
+	// 	w.WriteHeader(http.StatusForbidden)
+	// 	return
+	// }
+
+	// 3. 查询用户信息
+	user, err := dblayer.GetUserInfo(username)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	// 4. 组装并且响应用户数据
+	resp := util.RespMsg{
+		Code: 0,
+		Msg:  "OK",
+		Data: user,
+	}
+	w.Write(resp.JSONBytes())
+}
+
+// GenToken: 根据用户名生成用户的token，token是40位的字符串
 func GenToken(username string) string {
 	// md5(username + timestamp + token_salt) + timestamp[:8]
 	ts := fmt.Sprintf("%x", time.Now().Unix())
 	tokenPrefix := util.MD5([]byte(username + ts + "_tokensalt"))
 	return tokenPrefix + ts[:8]
+}
+
+// IsTokenValid: 判断token是否有效
+func IsTokenValid(token string) bool {
+	if len(token) != 40 {
+		return false
+	}
+	// 1. 判断token的时效性，是否过期
+
+	// 2. 从数据库tbl_user_token中查询username对应的token信息
+
+	// 3. 对比两个token是否一致
+
+	return true
 }

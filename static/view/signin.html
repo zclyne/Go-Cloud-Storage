@@ -77,9 +77,9 @@
 			return;
 		}
                 var resp = JSON.parse(body);
-                localStorage.setItem("token", resp.Token)
-                localStorage.setItem("username", resp.Username)
-                window.location.href = resp.Location;
+                localStorage.setItem("token", resp.data.Token)
+                localStorage.setItem("username", resp.data.Username)
+                window.location.href = resp.data.Location;
             }
         });
     }
