@@ -1,6 +1,7 @@
 package handler
 
 import (
+	dblayer "cloud-storage/db"
 	"cloud-storage/meta"
 	"cloud-storage/util"
 	"encoding/json"
@@ -60,8 +61,16 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		// meta.UpdateFileMeta(fileMeta)
 		meta.UpdateFileMetaDB(fileMeta)
 
-		// 重定向到上传成功页面
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		// 写入用户文件表
+		r.ParseForm()
+		username := r.Form.Get("username")
+		suc := dblayer.OnUserFileUploadFinished(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
+		if suc {
+			// 重定向到上传成功页面
+			http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		} else {
+			w.Write([]byte("Upload failed"))
+		}
 	}
 }
 
@@ -92,8 +101,14 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
-	fileMetas := meta.GetLastFileMetas(limitCnt)
-	data, err := json.Marshal(fileMetas)
+	username := r.Form.Get("username")
+	// fileMetas := meta.GetLastFileMetas(limitCnt)
+	userFiles, err := dblayer.QueryUserFileMetas(username, limitCnt)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	data, err := json.Marshal(userFiles)
 	if err != nil { // json转换失败
 		w.WriteHeader(http.StatusInternalServerError)
 		return

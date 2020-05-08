@@ -88,9 +88,10 @@
 
   function updateFileList() {
     $.ajax({
-      url: "/file/query?" + queryParams(),
+      url: "/file/query",
       type: "POST",
       data: {
+        username: localStorage.getItem("username"),
         limit: 15
       },
       error: function (err) {
@@ -132,15 +133,15 @@
 
           cell = x.insertCell();
           // cell.innerHTML = downloadHtml.format(data[i].FileHash, queryParams()) + 
-          cell.innerHTML = renameFileHtml.format(data[i].FileHash, data[i].FileName, 
-            data[i].FileHash,queryParams());
+          // cell.innerHTML = renameFileHtml.format(data[i].FileHash, data[i].FileName, data[i].FileHash,queryParams());
         }
       }
     });
   }
 
   function toUploadFile() {
-    window.location.href = '/file/upload?' + queryParams();
+    // window.location.href = '/file/upload?' + queryParams();
+    window.location.href = '/file/upload?' + "username=" + localStorage.getItem("username");
   }
 
   function downloadFile(durl) {
